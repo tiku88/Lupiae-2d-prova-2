@@ -47,8 +47,7 @@
     this.load.image('cordino', 'cordino.png');
     this.load.image('stacchi', 'stacchi.png');
     this.load.image('tifoso1', 'tifoso1.png');
-    this.load.image('contromosse', 'contromosse.png');
-    this.load.image('classifica', 'classifica.png');
+        this.load.image('classifica', 'classifica.png');
   }
 
   function create () {
@@ -71,8 +70,7 @@
 
     timerText = this.add.text(20, 20, 'Salvezza: 0/10s', { fontSize: '18px', fill: '#00ff00' });
 
-    this.add.image(60, 550, 'contromosse').setScale(2);
-
+    
     this.time.addEvent({ delay: 2000, callback: spawnTifoso, callbackScope: this, loop: true });
   }
 
