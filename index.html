@@ -1,0 +1,147 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Difendi la Lupiae 2D</title>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+  <style>
+    body { margin: 0; padding: 0; background: #000; }
+    canvas { display: block; margin: 0 auto; }
+  </style>
+</head>
+<body>
+<script>
+  const config = {
+    type: Phaser.AUTO,
+    width: 800,
+    height: 600,
+    pixelArt: true,
+    physics: {
+      default: 'arcade',
+      arcade: {
+        gravity: { y: 0 },
+        debug: false
+      }
+    },
+    scene: {
+      preload: preload,
+      create: create,
+      update: update
+    }
+  };
+
+  let player;
+  let cursors;
+  let tifosi = [];
+  let timerText;
+  let timeInSafeZone = 0;
+  let currentPosition = 7;
+  let positionText;
+  let keys;
+
+  const game = new Phaser.Game(config);
+
+  function preload () {
+    this.load.image('background', 'background.png');
+    this.load.image('cordino', 'cordino.png');
+    this.load.image('stacchi', 'stacchi.png');
+    this.load.image('tifoso1', 'tifoso1.png');
+    this.load.image('contromosse', 'contromosse.png');
+    this.load.image('classifica', 'classifica.png');
+  }
+
+  function create () {
+    this.add.image(400, 300, 'background');
+
+    player = this.physics.add.sprite(400, 500, 'cordino');
+    player.setCollideWorldBounds(true);
+
+    this.add.image(200, 500, 'stacchi');
+
+    cursors = this.input.keyboard.createCursorKeys();
+    keys = this.input.keyboard.addKeys({
+      uno: Phaser.Input.Keyboard.KeyCodes.ONE,
+      due: Phaser.Input.Keyboard.KeyCodes.TWO,
+      tre: Phaser.Input.Keyboard.KeyCodes.THREE
+    });
+
+    this.add.image(700, 100, 'classifica').setScale(0.5);
+    positionText = this.add.text(640, 20, 'Posizione: 7º', { fontSize: '18px', fill: '#ffffff' });
+
+    timerText = this.add.text(20, 20, 'Salvezza: 0/10s', { fontSize: '18px', fill: '#00ff00' });
+
+    this.add.image(60, 550, 'contromosse').setScale(2);
+
+    this.time.addEvent({ delay: 2000, callback: spawnTifoso, callbackScope: this, loop: true });
+  }
+
+  function update () {
+    player.setVelocity(0);
+
+    if (cursors.left.isDown) {
+      player.setVelocityX(-160);
+    } else if (cursors.right.isDown) {
+      player.setVelocityX(160);
+    }
+
+    if (cursors.up.isDown) {
+      player.setVelocityY(-160);
+    } else if (cursors.down.isDown) {
+      player.setVelocityY(160);
+    }
+
+    tifosi.forEach((tifoso, index) => {
+      tifoso.y += 1;
+      if (Phaser.Geom.Intersects.RectangleToRectangle(player.getBounds(), tifoso.getBounds())) {
+        this.scene.restart();
+      }
+    });
+
+    const change = Phaser.Math.Between(-1, 1);
+    currentPosition = Phaser.Math.Clamp(currentPosition + change, 1, 10);
+    positionText.setText(`Posizione: ${currentPosition}º`);
+
+    if (currentPosition === 7) {
+      timeInSafeZone += this.game.loop.delta / 1000;
+      timerText.setText(`Salvezza: ${Math.floor(timeInSafeZone)}/10s`);
+      if (timeInSafeZone >= 10) {
+        this.add.text(300, 300, 'SALVEZZA RAGGIUNTA!', { fontSize: '32px', fill: '#00ff00' });
+        this.scene.pause();
+      }
+    } else {
+      timeInSafeZone = 0;
+      timerText.setText('Salvezza: 0/10s');
+    }
+
+    if (Phaser.Input.Keyboard.JustDown(keys.uno)) {
+      const metà = Math.floor(tifosi.length / 2);
+      for (let i = 0; i < metà; i++) {
+        tifosi[i].destroy();
+      }
+      tifosi.splice(0, metà);
+    }
+
+    if (Phaser.Input.Keyboard.JustDown(keys.due)) {
+      tifosi.forEach(t => t.setVelocityY(0));
+      this.time.delayedCall(3000, () => {
+        tifosi.forEach(t => t.setVelocityY(50));
+      });
+    }
+
+    if (Phaser.Input.Keyboard.JustDown(keys.tre)) {
+      tifosi.forEach(t => t.y += 0.5);
+      this.time.delayedCall(5000, () => {
+        tifosi.forEach(t => t.setData('originalSpeed', 1));
+      });
+    }
+  }
+
+  function spawnTifoso() {
+    const tifoso = this.physics.add.sprite(Phaser.Math.Between(50, 750), 0, 'tifoso1');
+    tifoso.setVelocityY(50);
+    tifosi.push(tifoso);
+  }
+</script>
+</body>
+</html>
